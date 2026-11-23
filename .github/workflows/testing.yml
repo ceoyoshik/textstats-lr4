@@ -1,0 +1,95 @@
+name: Testing
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ["v*"]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Регрессионный набор раз в неделю, даже без изменений кода
+    - cron: "0 3 * * 1"
+
+jobs:
+  lint:
+    name: Стиль кода (flake8)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Получить код
+        uses: actions/checkout@v4
+
+      - name: Установить Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Установить зависимости
+        run: python -m pip install -r requirements.txt
+
+      - name: Проверка стиля
+        run: flake8 src tests
+
+  tests:
+    name: Тесты и покрытие (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - name: Получить код
+        uses: actions/checkout@v4
+
+      - name: Установить Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Установить зависимости
+        run: python -m pip install -r requirements.txt
+
+      - name: Модульные, интеграционные и системные тесты
+        run: |
+          pytest -q --cov=src --cov-report=term-missing \
+            --cov-report=xml --cov-fail-under=95
+
+      - name: Покрытие не ниже порога
+        run: |
+          coverage report --fail-under=95
+          test -f coverage.xml
+
+      - name: Сквозная проверка CLI
+        run: |
+          printf 'Привет, мир! Мир текста.\n' \
+            | python src/textstat.py --workdir exchange | tee result.txt
+          grep -q "Слов: 4" result.txt
+          grep -q "мир — 2" result.txt
+          test -f exchange/request.json && test -f exchange/response.json
+
+      - name: Сохранить покрытие
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-py${{ matrix.python-version }}
+          path: coverage.xml
+          if-no-files-found: ignore
+
+  regression:
+    name: Регрессионные тесты
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Получить код
+        uses: actions/checkout@v4
+
+      - name: Установить Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Установить зависимости
+        run: python -m pip install -r requirements.txt
+
+      - name: Регрессионный набор
+        run: pytest -q -m regression --cov=src --cov-report=term

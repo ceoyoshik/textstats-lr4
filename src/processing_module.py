@@ -20,7 +20,7 @@ from errors import (InputDataError, IntegrationError, ProtocolError,
                     VersionConflictError)
 
 WORD_RE = re.compile(r"[0-9A-Za-zА-Яа-яЁё]+(?:[-'][0-9A-Za-zА-Яа-яЁё]+)*")
-SENTENCE_RE = re.compile(r"[.!?…]+(?:\s+|$)")
+SENTENCE_RE = re.compile(r"[.!?…]+")
 
 DEFAULT_TOP = 3
 

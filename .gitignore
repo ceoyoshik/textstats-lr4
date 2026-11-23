@@ -1,0 +1,24 @@
+# Временные файлы и журналы
+*.tmp
+*.log
+
+# Каталоги сборки
+build/
+dist/
+
+# Окружение и кэш Python
+.env
+venv/
+__pycache__/
+*.pyc
+
+# Файлы обмена между модулями и отчёты покрытия
+exchange/
+result.txt
+.coverage
+
+# Виртуальное окружение, кэш pytest и отчёты
+.venv/
+.pytest_cache/
+htmlcov/
+coverage.xml

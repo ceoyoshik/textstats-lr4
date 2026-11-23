@@ -8,8 +8,6 @@ import sys
 import protocol
 from errors import InputDataError
 
-ALLOWED_CONTROL = {"\n", "\r", "\t"}
-
 
 def parse_text(text, source="ввод"):
     """Проверяет текст: строка, не пустая, в пределах MAX_TEXT."""
@@ -20,11 +18,7 @@ def parse_text(text, source="ввод"):
             f"{source}: текст длиннее {protocol.MAX_TEXT} символов")
     if not text.strip():
         raise InputDataError(f"{source}: текст не должен быть пустым")
-    for symbol in text:
-        if symbol < " " and symbol not in ALLOWED_CONTROL:
-            raise InputDataError(
-                f"{source}: недопустимый управляющий символ "
-                f"{ord(symbol):#04x}")
+    protocol.check_text_symbols(text, source)
     return text
 
 

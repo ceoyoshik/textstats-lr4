@@ -34,6 +34,18 @@ EXIT_REPORTED_ERROR = 10  # в файл ответа записано сообщ
 EXIT_FAILURE = 3          # модуль не смог даже записать ответ
 
 
+ALLOWED_CONTROL = {"\n", "\r", "\t"}
+
+
+def check_text_symbols(text, source="текст"):
+    """Запрещает управляющие символы, кроме переводов строк и табуляции."""
+    for symbol in text:
+        if symbol < " " and symbol not in ALLOWED_CONTROL:
+            raise InputDataError(
+                f"{source}: недопустимый управляющий символ "
+                f"{ord(symbol):#04x}")
+
+
 def is_number(value):
     """Конечное число (int или float), не bool."""
     if isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -140,6 +152,7 @@ def parse_request(message):
             f"текст длиннее {MAX_TEXT} символов: {len(text)}")
     if not text.strip():
         raise InputDataError("текст не должен быть пустым")
+    check_text_symbols(text)
     return text
 
 
@@ -169,6 +182,9 @@ def parse_response(message):
                 or not isinstance(item[0], str) or not is_int(item[1])
                 or item[1] < 0):
             raise ProtocolError("элемент top_words должен быть [слово, число]")
+        if item[1] > payload["words"]:
+            raise ProtocolError(
+                "частота слова не может превышать число слов")
         result.append((item[0], item[1]))
     return {
         "chars": payload["chars"],
